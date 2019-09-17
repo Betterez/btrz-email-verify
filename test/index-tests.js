@@ -1,18 +1,8 @@
 describe("Verify email", () => {
-  const config = {
-    db: {
-      uris: ["localhost"],
-      database: "btrz-email-verify",
-      options: {
-        username: "",
-        password: ""
-      }
-    }
-  };
+  const { config } = require("../test-helpers/config");
   const { expect } = require("chai");
   const {
     verify,
-    getQuickEmailVerificationSandbox,
     getQuickEmailVerificationMock
   } = require("../index");
   const {
@@ -22,7 +12,6 @@ describe("Verify email", () => {
     VerifiedEmail
   } = require("../models");
   const dao = new SimpleDao(config);
-  // const verifier = getQuickEmailVerificationSandbox();
   const verifier = getQuickEmailVerificationMock();
 
   const blacklistedEmail = new VerifiedEmail({

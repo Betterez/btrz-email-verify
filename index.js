@@ -6,10 +6,20 @@ const {
 const {
   verify
 } = require("./verifier");
+const {
+  status,
+  created,
+  update,
+  remove
+} = require("./db-wrapper");
 
 module.exports = {
   getQuickEmailVerification,
   getQuickEmailVerificationMock,
   getQuickEmailVerificationSandbox,
-  verify
+  verify,
+  status,
+  created,
+  update,
+  remove
 }

@@ -1,7 +1,7 @@
 const {
   status,
   create,
-  getEmail
+  getByEmail
 } = require("./db-wrapper");
 
 function buildResponse(result, response, send, err) {
@@ -14,7 +14,7 @@ function buildResponse(result, response, send, err) {
 }
 
 async function verify(dao, verifier, email) {
-  const verifiedEmail = await getEmail(dao, email);
+  const verifiedEmail = await getByEmail(dao, email);
   if (verifiedEmail && verifiedEmail.blacklisted) {
     return buildResponse(status.BLACKLISTED, verifiedEmail.response);
   }
@@ -30,7 +30,7 @@ async function verify(dao, verifier, email) {
   }
   const saveToSend = response.body.safe_to_send === "true";
   if (!saveToSend) {
-    await create(dao, email, response.body, status.BLACKLISTED);
+    await create(dao, email, status.BLACKLISTED, response.body);
   }
   return buildResponse(response.body.result, response.body, saveToSend);
 }
