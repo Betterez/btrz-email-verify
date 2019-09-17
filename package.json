@@ -9,7 +9,7 @@
     "tdd": "mocha -w"
   },
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "btrz-simple-dao": "^4.0.0",
     "chai": "^4.2.0",
