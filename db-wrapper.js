@@ -8,14 +8,41 @@ const {
   VerifiedEmail
 } = require("./models");
 
+function validateStatus(currentStatus) {
+  if (
+    currentStatus === status.BLACKLISTED ||
+    currentStatus === status.BLOCKED ||
+    currentStatus === status.FAILURE ||
+    currentStatus === status.WHITELISTED
+  ) {
+    return true;
+  }
+  throw new Error("INVALID_STATUS");
+}
+
+function buildData(set, currentStatus, response) {
+  if (response) {
+    set.QEVResponse = response;
+  }
+  set.blacklisted = currentStatus === status.BLACKLISTED || currentStatus === status.BLOCKED;
+  set.whitelisted = currentStatus === status.WHITELISTED;
+  set.blocked = currentStatus === status.BLOCKED;
+  return set;
+}
+
+async function checkIfBlocked(dao, email) {
+  const checkRecord = await getByEmail(dao, email);
+  if (checkRecord.blocked) {
+    throw new Error("VERIFIED_EMAIL_BLOCKED");
+  }
+}
+
 async function create(dao, email, currentStatus, response = {}) {
-  const verifiedEmail = new VerifiedEmail({
-    email,
-    response,
-    blacklisted: currentStatus === status.BLACKLISTED,
-    whitelisted: currentStatus === status.WHITELISTED,
-    blocked: currentStatus === status.BLOCKED
-  });
+  validateStatus(currentStatus);
+  const data = buildData({
+    email
+  }, currentStatus, response);
+  const verifiedEmail = new VerifiedEmail(data);
   return dao.save(verifiedEmail);
 }
 
@@ -26,11 +53,22 @@ async function getByEmail(dao, email) {
 }
 
 async function update(dao, email, currentStatus, response) {
-
+  validateStatus(currentStatus);
+  await checkIfBlocked(dao, email);
+  const set = buildData({}, currentStatus, response);
+  await dao.for(VerifiedEmail).update({
+    email
+  }, {
+    $set: set
+  });
+  return await getByEmail(dao, email);
 }
 
 async function remove(dao, email) {
-
+  await checkIfBlocked(dao, email);
+  return await dao.for(VerifiedEmail).remove({
+    email
+  });
 }
 
 module.exports = {

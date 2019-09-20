@@ -34,7 +34,7 @@ describe("Verify email", () => {
   afterEach(async () => {
     await dao.for(VerifiedEmail).removeById(_blacklistedEmail._id);
     await dao.for(VerifiedEmail).removeById(_whitelistedEmail._id);
-    await dao.for(VerifiedEmail).remove({ email: "role@example.com" })
+    await dao.for(VerifiedEmail).remove({ email: "rejected-email@example.com" })
   });
 
   it("returns true if running out of credits", async () => {
@@ -48,9 +48,14 @@ describe("Verify email", () => {
     expect(result.result).to.be.eql("valid");
   });
 
-  it("returns false is email is not safe_to_send", async () => {
+  it("returns false is email is invalid", async () => {
     const result = await verify(dao, verifier, "invalid-email@example.com");
     expect(result.send).to.be.eql(false);
+  });
+
+  it("returns true is email is valid", async () => {
+    const result = await verify(dao, verifier, "role@example.com");
+    expect(result.send).to.be.eql(true);
   });
 
   it("returns false if email is in db as blocked", async () => {
@@ -64,9 +69,9 @@ describe("Verify email", () => {
   });
 
   it("should save into the db a failure as blacklisted", async () => {
-    const result = await verify(dao, verifier, "role@example.com");
+    const result = await verify(dao, verifier, "rejected-email@example.com");
     expect(result.send).to.be.eql(false);
-    const saved = await dao.for(VerifiedEmail).findOne({email: "role@example.com"});
+    const saved = await dao.for(VerifiedEmail).findOne({email: "rejected-email@example.com"});
     expect(saved.blacklisted).to.be.eql(true);
   });
 });

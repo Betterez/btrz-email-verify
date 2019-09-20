@@ -28,7 +28,7 @@ async function verify(dao, verifier, email) {
   if (response.body.success === "false") {
     return buildResponse(response.body.message, response.body, true);
   }
-  const saveToSend = response.body.safe_to_send === "true";
+  const saveToSend = response.body.result === "valid";
   if (!saveToSend) {
     await create(dao, email, status.BLACKLISTED, response.body);
   }
