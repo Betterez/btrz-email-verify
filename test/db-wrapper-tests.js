@@ -20,20 +20,45 @@ describe("db-wrapper", () => {
     create,
     update,
     remove,
+    getAll,
     getByEmail,
     status
   } = require("../db-wrapper");
   let email = null;
+  let extraEmails = [];
   const response = {
     result: "success"
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     email = chance.email();
+    extraEmails = [
+      chance.email(),
+      chance.email(),
+      chance.email()
+    ]
+    await create(dao, extraEmails[0], status.WHITELISTED);
+    await create(dao, extraEmails[1], status.WHITELISTED);
+    await create(dao, extraEmails[2], status.WHITELISTED);
   });
 
   afterEach(async () => {
-    await dao.for(VerifiedEmail).remove({email})
+    await dao.for(VerifiedEmail).remove({ email });
+    await dao.for(VerifiedEmail).remove({ email: extraEmails[0] });
+    await dao.for(VerifiedEmail).remove({ email: extraEmails[1] });
+    await dao.for(VerifiedEmail).remove({ email: extraEmails[2] });
+  });
+
+  describe("getAll", () => {
+    it("should return the first 3", async () => {
+      const results = await getAll(dao, 2, 0);
+      expect(results.length).to.be.eql(2);
+    });
+
+    it("should return the last one", async () => {
+      const results = await getAll(dao, 2, 1);
+      expect(results.length).to.be.eql(1);
+    });
   });
 
   describe("getByEmail", () => {

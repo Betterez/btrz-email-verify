@@ -2,8 +2,8 @@ module.exports = {
   config: {
     db: {
       uris: ["localhost"],
-      database: "btrz-email-verify",
       options: {
+        database: "btrz-email-verify",
         username: "",
         password: ""
       }

@@ -46,6 +46,17 @@ async function create(dao, email, currentStatus, response = {}) {
   return dao.save(verifiedEmail);
 }
 
+async function getAll(dao, pageSize, pageNumber) {
+  const options = {
+    skip: pageNumber * pageSize,
+    limit: pageSize
+  };
+
+  return dao.for(VerifiedEmail)
+    .find({}, options)
+    .toArray();
+}
+
 async function getByEmail(dao, email) {
   return dao.for(VerifiedEmail).findOne({
     email
@@ -73,6 +84,7 @@ async function remove(dao, email) {
 
 module.exports = {
   create,
+  getAll,
   getByEmail,
   status,
   update,

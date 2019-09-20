@@ -35,6 +35,7 @@ describe("Verify email", () => {
     await dao.for(VerifiedEmail).removeById(_blacklistedEmail._id);
     await dao.for(VerifiedEmail).removeById(_whitelistedEmail._id);
     await dao.for(VerifiedEmail).remove({ email: "rejected-email@example.com" })
+    await dao.for(VerifiedEmail).remove({ email: "invalid-email@example.com" })
   });
 
   it("returns true if running out of credits", async () => {
