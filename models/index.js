@@ -47,7 +47,7 @@ class VerifiedEmail {
         "properties": {
           "result": {
             "type": "string",
-            "enum": ["true", "false", "unknown"],
+            "enum": ["valid", "invalid", "unknown"],
             "description": "Indicates if the email verifies or not"
           },
           "reason": {
