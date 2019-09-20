@@ -43,7 +43,7 @@ class VerifiedEmail {
       "QEVResponse": {
         "id": "QEVResponse",
         "type": "object",
-        "required": ["success", "message"],
+        "required": ["result", "message"],
         "properties": {
           "result": {
             "type": "string",
