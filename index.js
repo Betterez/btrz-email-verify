@@ -1,4 +1,7 @@
 const {
+  VerifiedEmail
+} = require("./models");
+const {
   getQuickEmailVerification,
   getQuickEmailVerificationMock,
   getQuickEmailVerificationSandbox,
@@ -17,9 +20,10 @@ module.exports = {
   getQuickEmailVerification,
   getQuickEmailVerificationMock,
   getQuickEmailVerificationSandbox,
-  verify,
-  status,
   created,
+  remove,
+  status,
   update,
-  remove
+  VerifiedEmail,
+  verify
 }
