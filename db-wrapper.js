@@ -32,7 +32,7 @@ function buildData(set, currentStatus, response) {
 
 async function checkIfBlocked(dao, email) {
   const checkRecord = await getByEmail(dao, email);
-  if (checkRecord.blocked) {
+  if (checkRecord && checkRecord.blocked) {
     throw new Error("VERIFIED_EMAIL_BLOCKED");
   }
 }
