@@ -11,7 +11,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "btrz-simple-dao": "^4.0.0",
+    "btrz-simple-dao": "^4.1.0",
     "chai": "^4.2.0",
     "mocha": "^6.2.0",
     "quickemailverification": "^1.0.2",
