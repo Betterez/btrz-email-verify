@@ -33,6 +33,8 @@ async function verify(dao, verifier, email, logger) {
   const saveToSend = response.body.result === "valid";
   if (!saveToSend) {
     await create(dao, email, status.BLACKLISTED, response.body);
+  } else {
+    await create(dao, email, status.WHITELISTED, response.body);
   }
   return buildResponse(response.body.result, response.body, saveToSend, logger);
 }

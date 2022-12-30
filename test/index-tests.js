@@ -56,9 +56,11 @@ describe("Verify email", () => {
     expect(saved.blacklisted).to.be.eql(true);
   });
 
-  it("returns true is email is valid", async () => {
+  it("returns true is email is valid and should be whitelistes", async () => {
     const result = await verify(dao, verifier, "role@example.com");
     expect(result.send).to.be.eql(true);
+    const saved = await dao.for(VerifiedEmail).findOne({email: "role@example.com"});
+    expect(saved.whitelisted).to.be.eql(true);
   });
 
   it("returns false if email is in db as blocked", async () => {
