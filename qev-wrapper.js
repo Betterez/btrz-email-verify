@@ -1,4 +1,4 @@
-const API_KEY = process.env.QEV;
+const API_KEY = process.env.QUICK_EMAIL_VERIFICATION_KEY;
 const quickemailverification = require("quickemailverification");
 function getQuickEmailVerification() {
   const verifier = quickemailverification
