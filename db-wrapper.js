@@ -7,6 +7,9 @@ const status = {
 const {
   VerifiedEmail
 } = require("./models");
+const {
+  BzDate
+} = require("bz-date");
 
 function validateStatus(currentStatus) {
   if (
@@ -39,8 +42,11 @@ async function checkIfBlocked(dao, email) {
 
 async function create(dao, email, currentStatus, response = {}) {
   validateStatus(currentStatus);
+  const date = (new BzDate()).toLiteral();
   const data = buildData({
-    email
+    email,
+    createdAt: date,
+    updatedAt: date
   }, currentStatus, response);
   const verifiedEmail = new VerifiedEmail(data);
   return dao.save(verifiedEmail);
@@ -66,7 +72,10 @@ async function getByEmail(dao, email) {
 async function update(dao, email, currentStatus, response) {
   validateStatus(currentStatus);
   await checkIfBlocked(dao, email);
-  const set = buildData({}, currentStatus, response);
+  const date = (new BzDate()).toLiteral();
+  const set = buildData({
+    updatedAt: date
+  }, currentStatus, response);
   await dao.for(VerifiedEmail).update({
     email
   }, {

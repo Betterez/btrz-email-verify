@@ -85,6 +85,8 @@ describe("db-wrapper", () => {
       expect(result.whitelisted).to.be.eql(true);
       expect(result.blacklisted).to.be.eql(false);
       expect(result.blocked).to.be.eql(false);
+      expect(result.createdAt.value).to.not.be.eql(undefined);
+      expect(result.updatedAt.value).to.be.eql(result.createdAt.value);
     });
 
     it("should save a blacklisted un-blocked record", async () => {
@@ -95,6 +97,7 @@ describe("db-wrapper", () => {
       expect(result.whitelisted).to.be.eql(false);
       expect(result.blacklisted).to.be.eql(true);
       expect(result.blocked).to.be.eql(false);
+      expect(result.createdAt.value).to.not.be.eql(undefined);
     });
 
     it("should save a blacklisted blocked record", async () => {
@@ -105,6 +108,7 @@ describe("db-wrapper", () => {
       expect(result.whitelisted).to.be.eql(false);
       expect(result.blacklisted).to.be.eql(true);
       expect(result.blocked).to.be.eql(true);
+      expect(result.createdAt.value).to.not.be.eql(undefined);
     });
 
     it("should not create if status is invalid", (done) => {
@@ -124,6 +128,9 @@ describe("db-wrapper", () => {
       expect(result.whitelisted).to.be.eql(false);
       expect(result.blacklisted).to.be.eql(true);
       expect(result.QEVResponse).to.be.eql(response);
+      expect(result.createdAt.value).to.not.be.eql(undefined);
+      expect(result.updatedAt.value).to.not.be.eql(undefined);
+      expect(result.updatedAt.value).to.not.be.eql(result.createdAt.value);
     });
 
     it("should change the status to WHITELISTED", async () => {
@@ -133,6 +140,9 @@ describe("db-wrapper", () => {
       expect(result.whitelisted).to.be.eql(true);
       expect(result.blacklisted).to.be.eql(false);
       expect(result.QEVResponse).to.be.eql(response);
+      expect(result.createdAt.value).to.not.be.eql(undefined);
+      expect(result.updatedAt.value).to.not.be.eql(undefined);
+      expect(result.updatedAt.value).to.not.be.eql(result.createdAt.value);
     });
 
     it("should change the status to BLACKLISTED and block it", async () => {
@@ -143,6 +153,9 @@ describe("db-wrapper", () => {
       expect(result.blacklisted).to.be.eql(true);
       expect(result.blocked).to.be.eql(true);
       expect(result.QEVResponse).to.be.eql(response);
+      expect(result.createdAt.value).to.not.be.eql(undefined);
+      expect(result.updatedAt.value).to.not.be.eql(undefined);
+      expect(result.updatedAt.value).to.not.be.eql(result.createdAt.value);
     });
 
     it("should not change a BLOCKED record", (done) => {

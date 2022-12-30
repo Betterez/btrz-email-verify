@@ -6,13 +6,16 @@
   "scripts": {
     "start": "node ./index.js",
     "test": "mocha --exit",
-    "tdd": "mocha -w"
+    "tdd": "mocha -w",
+    "preversion": "npm test",
+    "postversion": "git push origin master && git push --tags"
   },
   "author": "",
   "license": "MIT",
   "dependencies": {
     "btrz-simple-dao": "4.3.1",
-    "quickemailverification": "1.0.3"
+    "quickemailverification": "1.0.3",
+    "bz-date": "1.1.0"
   },
   "devDependencies": {
     "chai": "^4.3.7",

@@ -135,6 +135,8 @@ class VerifiedEmail {
     this.whitelisted = data.whitelisted || false;
     this.QEVResponse = data.QEVResponse || {};
     this.blocked = data.blocked || false;
+    this.createdAt = data.createdAt || {};
+    this.updatedAt = data.updatedAt || {};
   }
 }
 
