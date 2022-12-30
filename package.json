@@ -1,6 +1,6 @@
 {
   "name": "btrz-email-verify",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "description": "Verify emails using Quick Email Verifier and save into a blacklist in a mongodb database.",
   "main": "index.js",
   "scripts": {
