@@ -49,9 +49,11 @@ describe("Verify email", () => {
     expect(result.result).to.be.eql("valid");
   });
 
-  it("returns false is email is invalid", async () => {
+  it("returns false is email is invalid and set to db as blacklisted", async () => {
     const result = await verify(dao, verifier, "invalid-email@example.com");
     expect(result.send).to.be.eql(false);
+    const saved = await dao.for(VerifiedEmail).findOne({email: "invalid-email@example.com"});
+    expect(saved.blacklisted).to.be.eql(true);
   });
 
   it("returns true is email is valid", async () => {
