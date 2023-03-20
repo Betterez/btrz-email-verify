@@ -1,8 +1,24 @@
 const {
   status,
   create,
-  getByEmail
+  getByEmail,
+  remove
 } = require("./db-wrapper");
+
+const {
+  BzDate
+} = require("bz-date");
+
+function isOutdated(verifiedEmail) {
+  if (!verifiedEmail || !verifiedEmail.updatedAt) {
+    return true;
+  }
+  const lastUpdate = new BzDate(verifiedEmail.updatedAt);
+  const now = new BzDate();
+  const diffInMilliseconds = now.getTime() - lastUpdate.getTime();
+  const diffInDays = Math.round(diffInMilliseconds / (1000 * 60 * 60 * 24));
+  return diffInDays > 30;
+}
 
 function buildResponse(result, response, send, logger) {
   if (logger && logger.info) {
@@ -21,7 +37,11 @@ async function verify(dao, verifier, email, logger) {
     return buildResponse(status.BLACKLISTED, verifiedEmail.response, false, logger);
   }
   if (verifiedEmail && verifiedEmail.whitelisted) {
-    return buildResponse(status.WHITELISTED, verifiedEmail.response, true, logger);
+    if (!isOutdated(verifiedEmail)) {
+      return buildResponse(status.WHITELISTED, verifiedEmail.response, true, logger);
+    } else {
+      await remove(dao, email);
+    }
   }
   const response = await verifier(email);
   if (!response || !response.body) {

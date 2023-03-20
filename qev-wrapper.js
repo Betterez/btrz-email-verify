@@ -161,6 +161,44 @@ function getQuickEmailVerificationMock() {
           }
         });
       }
+      if (email === "expirated-whitelisted@example.com") {
+        resolve({
+          body: {
+            "result": "valid",
+            "reason": "accepted_email",
+            "disposable": "false",
+            "accept_all": "false",
+            "role": "false",
+            "free": "false",
+            "email": "expirated-whitelisted@example.com",
+            "user": "expirated-whitelisted",
+            "domain": "example.com",
+            "safe_to_send": "true",
+            "did_you_mean": "",
+            "success": "true",
+            "message": ""
+          }
+        });
+      }
+      if (email === "expirated-whitelisted-not-safe@example.com") {
+        resolve({
+          body: {
+            "result": "invalid",
+            "reason": "invalid_email",
+            "disposable": "false",
+            "accept_all": "false",
+            "role": "false",
+            "free": "false",
+            "email": "expirated-whitelisted-not-safe@example.com",
+            "user": "expirated-whitelisted-not-safe",
+            "domain": "example.com",
+            "safe_to_send": "false",
+            "did_you_mean": "",
+            "success": "true",
+            "message": ""
+          }
+        });
+      }
       if (email === "invalid-email@example.com") {
         resolve({
           body: {
