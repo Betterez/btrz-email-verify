@@ -17,7 +17,7 @@ describe("db-wrapper", () => {
   } = require("btrz-simple-dao");
   const dao = new SimpleDao(config);
   const {
-    create,
+    createOrUpdate,
     update,
     remove,
     getAll,
@@ -37,9 +37,9 @@ describe("db-wrapper", () => {
       chance.email(),
       chance.email()
     ]
-    await create(dao, extraEmails[0], status.WHITELISTED);
-    await create(dao, extraEmails[1], status.WHITELISTED);
-    await create(dao, extraEmails[2], status.WHITELISTED);
+    await createOrUpdate(dao, extraEmails[0], status.WHITELISTED);
+    await createOrUpdate(dao, extraEmails[1], status.WHITELISTED);
+    await createOrUpdate(dao, extraEmails[2], status.WHITELISTED);
   });
 
   afterEach(async () => {
@@ -63,7 +63,7 @@ describe("db-wrapper", () => {
 
   describe("getByEmail", () => {
     it("should return a created record by email", async () => {
-      await create(dao, email, status.WHITELISTED, response);
+      await createOrUpdate(dao, email, status.WHITELISTED, response);
       const result = await getByEmail(dao, email);
       expect(result.email).to.be.eql(email);
       expect(result._id).not.to.be.eql(undefined);
@@ -76,9 +76,10 @@ describe("db-wrapper", () => {
     });
   });
 
-  describe("create", async () => {
+  describe("createOrUpdate", async () => {
     it("should save a whitelisted un-blocked record", async () => {
-      const result = await create(dao, email, status.WHITELISTED, response);
+      const result = await createOrUpdate(dao, email, status.WHITELISTED, response);
+      console.log(result);
       expect(result._id).to.not.be.eql(undefined);
       expect(result.email).to.be.eql(email);
       expect(result.QEVResponse).to.be.eql(response);
@@ -90,7 +91,7 @@ describe("db-wrapper", () => {
     });
 
     it("should save a blacklisted un-blocked record", async () => {
-      const result = await create(dao, email, status.BLACKLISTED, response);
+      const result = await createOrUpdate(dao, email, status.BLACKLISTED, response);
       expect(result._id).to.not.be.eql(undefined);
       expect(result.email).to.be.eql(email);
       expect(result.QEVResponse).to.be.eql(response);
@@ -101,7 +102,7 @@ describe("db-wrapper", () => {
     });
 
     it("should save a blacklisted blocked record", async () => {
-      const result = await create(dao, email, status.BLOCKED, response);
+      const result = await createOrUpdate(dao, email, status.BLOCKED, response);
       expect(result._id).to.not.be.eql(undefined);
       expect(result.email).to.be.eql(email);
       expect(result.QEVResponse).to.be.eql(response);
@@ -112,7 +113,7 @@ describe("db-wrapper", () => {
     });
 
     it("should not create if status is invalid", (done) => {
-      create(dao, email, chance.word(), response)
+      createOrUpdate(dao, email, chance.word(), response)
         .catch((e) => {
           expect(e.message).to.be.eql("INVALID_STATUS");
           done();
@@ -122,7 +123,7 @@ describe("db-wrapper", () => {
 
   describe("update", () => {
     it("should change the status to BLACKLISTED", async () => {
-      await create(dao, email, status.WHITELISTED, response);
+      await createOrUpdate(dao, email, status.WHITELISTED, response);
       const result = await update(dao, email, status.BLACKLISTED);
       expect(result._id).to.not.be.eql(null);
       expect(result.whitelisted).to.be.eql(false);
@@ -134,7 +135,7 @@ describe("db-wrapper", () => {
     });
 
     it("should change the status to WHITELISTED", async () => {
-      await create(dao, email, status.BLACKLISTED, response);
+      await createOrUpdate(dao, email, status.BLACKLISTED, response);
       const result = await update(dao, email, status.WHITELISTED);
       expect(result._id).to.not.be.eql(null);
       expect(result.whitelisted).to.be.eql(true);
@@ -146,7 +147,7 @@ describe("db-wrapper", () => {
     });
 
     it("should change the status to BLACKLISTED and block it", async () => {
-      await create(dao, email, status.WHITELISTED, response);
+      await createOrUpdate(dao, email, status.WHITELISTED, response);
       const result = await update(dao, email, status.BLOCKED);
       expect(result._id).to.not.be.eql(null);
       expect(result.whitelisted).to.be.eql(false);
@@ -159,7 +160,7 @@ describe("db-wrapper", () => {
     });
 
     it("should not change a BLOCKED record", (done) => {
-      create(dao, email, status.BLOCKED, response)
+      createOrUpdate(dao, email, status.BLOCKED, response)
         .then(() => {
           return update(dao, email, status.WHITELISTED);
         })
@@ -170,7 +171,7 @@ describe("db-wrapper", () => {
     });
 
     it("should not change if status is invalid", (done) => {
-      create(dao, email, status.BLOCKED, response)
+      createOrUpdate(dao, email, status.BLOCKED, response)
         .then(() => {
           return update(dao, email, chance.word());
         })
@@ -183,14 +184,14 @@ describe("db-wrapper", () => {
 
   describe("remove", () => {
     it("should remove a record", async () => {
-      await create(dao, email, status.WHITELISTED, response);
+      await createOrUpdate(dao, email, status.WHITELISTED, response);
       await remove(dao, email);
       const result = await getByEmail(dao, email);
       expect(result).to.be.eql(null);
     });
 
     it("should not remove a BLOCKED record", (done) => {
-      create(dao, email, status.BLOCKED, response)
+      createOrUpdate(dao, email, status.BLOCKED, response)
         .then(() => {
           return remove(dao, email);
         })

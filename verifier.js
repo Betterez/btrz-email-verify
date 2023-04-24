@@ -1,6 +1,6 @@
 const {
   status,
-  create,
+  createOrUpdate,
   getByEmail,
   remove
 } = require("./db-wrapper");
@@ -39,8 +39,6 @@ async function verify(dao, verifier, email, logger) {
   if (verifiedEmail && verifiedEmail.whitelisted) {
     if (!isOutdated(verifiedEmail)) {
       return buildResponse(status.WHITELISTED, verifiedEmail.response, true, logger);
-    } else {
-      await remove(dao, email);
     }
   }
   const response = await verifier(email);
@@ -52,9 +50,9 @@ async function verify(dao, verifier, email, logger) {
   }
   const saveToSend = response.body.result === "valid";
   if (!saveToSend) {
-    await create(dao, email, status.BLACKLISTED, response.body);
+    await createOrUpdate(dao, email, status.BLACKLISTED, response.body);
   } else {
-    await create(dao, email, status.WHITELISTED, response.body);
+    await createOrUpdate(dao, email, status.WHITELISTED, response.body);
   }
   return buildResponse(response.body.result, response.body, saveToSend, logger);
 }

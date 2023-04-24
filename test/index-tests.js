@@ -113,9 +113,10 @@ describe("Verify email", () => {
   it("you should recheck the email whitelist if the last update was 30 days ago " +
             "and then it should be saved in the db in the whitelist", async () => {
     const verifierSpy = sandbox.spy(verifier);
+    const updatedAt = (new BzDate("2020-01-01 00:00:00:000")).toLiteral();
     const set = {
       $set: {
-        updatedAt: (new BzDate("2020-01-01 00:00:00:000")).toLiteral()
+        updatedAt
       }
     };
     // Update the field updatedAt
@@ -130,8 +131,8 @@ describe("Verify email", () => {
     const saved = await dao.for(VerifiedEmail).find({email: "expirated-whitelisted@example.com"}).toArray();
     expect(saved.length).to.be.eql(1);
     expect(saved[0].whitelisted).to.be.eql(true);
-    // New record created
-    expect(saved[0]._id).to.not.be.eql(_expiratedWhitelistedEmail._id);
+    expect(saved[0]._id).to.be.eql(_expiratedWhitelistedEmail._id);
+    expect(saved[0].updatedAt.value).to.be.greaterThan(updatedAt.value);
   });
   it("should recheck the email whitelist if the last update was 30 days ago, but then mark as blacklisted", async () => {
     const verifierSpy = sandbox.spy(verifier);
