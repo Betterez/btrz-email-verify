@@ -13,7 +13,7 @@ const {
   getAll,
   getByEmail,
   status,
-  create,
+  createOrUpdate,
   update,
   remove
 } = require("./db-wrapper");
@@ -22,7 +22,7 @@ module.exports = {
   getQuickEmailVerification,
   getQuickEmailVerificationMock,
   getQuickEmailVerificationSandbox,
-  create,
+  create: createOrUpdate,
   remove,
   status,
   update,
