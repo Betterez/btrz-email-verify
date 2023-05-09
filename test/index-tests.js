@@ -73,6 +73,16 @@ describe("Verify email", () => {
     expect(result.send).to.be.eql(true);
   });
 
+  it("returns true if the reason for rejection is excluded (unavailable-smtp)", async () => {
+    const result = await verify(dao, verifier, "unavailable-smtp@example.com");
+    expect(result.send).to.be.eql(true);
+  });
+
+  it("returns true if the reason for rejection is excluded (unexpected-error)", async () => {
+    const result = await verify(dao, verifier, "unexpected-error@example.com");
+    expect(result.send).to.be.eql(true);
+  });
+
   it("returns true if email is safe_to_send", async () => {
     const result = await verify(dao, verifier, "safe-to-send@example.com");
     expect(result.send).to.be.eql(true);
@@ -136,9 +146,10 @@ describe("Verify email", () => {
   });
   it("should recheck the email whitelist if the last update was 30 days ago, but then mark as blacklisted", async () => {
     const verifierSpy = sandbox.spy(verifier);
+    const updatedAt = (new BzDate("2023-01-01 00:00:00:000")).toLiteral();
     const set = {
       $set: {
-        updatedAt: (new BzDate("2023-01-01 00:00:00:000")).toLiteral()
+        updatedAt
       }
     };
     // Update the field updatedAt
@@ -153,7 +164,8 @@ describe("Verify email", () => {
     const saved = await dao.for(VerifiedEmail).find({email: "expirated-whitelisted-not-safe@example.com"}).toArray();
     expect(saved.length).to.be.eql(1);
     expect(saved[0].blacklisted).to.be.eql(true);
-    // New record created
-    expect(saved[0]._id).to.not.be.eql(_expiratedWhitelistedEmail._id);
+    // record updated
+    expect(saved[0]._id).to.be.eql(_expiratedWhitelistedNotSafe._id);
+    expect(saved[0].updatedAt.value).to.be.greaterThan(updatedAt.value);
   });
 });

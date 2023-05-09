@@ -79,7 +79,6 @@ describe("db-wrapper", () => {
   describe("createOrUpdate", async () => {
     it("should save a whitelisted un-blocked record", async () => {
       const result = await createOrUpdate(dao, email, status.WHITELISTED, response);
-      console.log(result);
       expect(result._id).to.not.be.eql(undefined);
       expect(result.email).to.be.eql(email);
       expect(result.QEVResponse).to.be.eql(response);

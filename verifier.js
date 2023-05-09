@@ -1,13 +1,15 @@
 const {
   status,
   createOrUpdate,
-  getByEmail,
-  remove
+  getByEmail
 } = require("./db-wrapper");
 
 const {
   BzDate
 } = require("bz-date");
+
+// Exclude certain reasons from blacklisting an email
+const excludedReasons = ["unexpected_error", "unavailable_smtp"];
 
 function isOutdated(verifiedEmail) {
   if (!verifiedEmail || !verifiedEmail.updatedAt) {
@@ -47,6 +49,9 @@ async function verify(dao, verifier, email, logger) {
   }
   if (response.body.success === "false") {
     return buildResponse(response.body.message, response.body, true, logger);
+  }
+  if (excludedReasons.includes(response.body.reason)) {
+    return buildResponse(response.body.reason, response.body, true, logger);
   }
   const saveToSend = response.body.result === "valid";
   if (!saveToSend) {
