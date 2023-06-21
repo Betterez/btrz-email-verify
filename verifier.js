@@ -9,7 +9,7 @@ const {
 } = require("bz-date");
 
 // Exclude certain reasons from blacklisting an email
-const excludedReasons = ["unexpected_error", "unavailable_smtp"];
+const excludedReasons = ["unexpected_error", "unavailable_smtp", "timeout"];
 
 function isOutdated(verifiedEmail) {
   if (!verifiedEmail || !verifiedEmail.updatedAt) {

@@ -83,6 +83,11 @@ describe("Verify email", () => {
     expect(result.send).to.be.eql(true);
   });
 
+  it("returns true if the reason for rejection is excluded (timeout)", async () => {
+    const result = await verify(dao, verifier, "timeout@example.com");
+    expect(result.send).to.be.eql(true);
+  });
+
   it("returns true if email is safe_to_send", async () => {
     const result = await verify(dao, verifier, "safe-to-send@example.com");
     expect(result.send).to.be.eql(true);
