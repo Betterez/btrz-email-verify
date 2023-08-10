@@ -435,6 +435,23 @@ function getQuickEmailVerificationMock() {
           }
         });
       }
+      resolve({
+        body: {
+          "result": "valid",
+          "reason": "accepted_email",
+          "disposable": "true",
+          "accept_all": "true",
+          "role": "false",
+          "free": "false",
+          "email": "valid@example.com",
+          "user": "valid",
+          "domain": "example.com",
+          "safe_to_send": "false",
+          "did_you_mean": "",
+          "success": "true",
+          "message": ""
+        }
+      });
     }
     return new Promise(executor);
   };
