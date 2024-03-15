@@ -36,11 +36,11 @@ function buildResponse(result, response, send, logger) {
 async function verify(dao, verifier, email, logger) {
   const verifiedEmail = await getByEmail(dao, email);
   if (verifiedEmail && verifiedEmail.blacklisted) {
-    return buildResponse(status.BLACKLISTED, verifiedEmail.response, false, logger);
+    return buildResponse(status.BLACKLISTED, verifiedEmail.QEVResponse, false, logger);
   }
   if (verifiedEmail && verifiedEmail.whitelisted) {
     if (!isOutdated(verifiedEmail)) {
-      return buildResponse(status.WHITELISTED, verifiedEmail.response, true, logger);
+      return buildResponse(status.WHITELISTED, verifiedEmail.QEVResponse, true, logger);
     }
   }
   const response = await verifier(email);
