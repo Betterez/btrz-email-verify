@@ -9,7 +9,8 @@
     "test": "node --test --test-concurrency=1 --test-force-exit test/*-tests.js",
     "tdd": "node --test --watch --test-concurrency=1 --test-force-exit test/*-tests.js",
     "preversion": "npm test",
-    "postversion": "git push origin master && git push --tags"
+    "postversion": "git push origin master && git push --tags",
+    "prepare": "git config core.hooksPath .githooks"
   },
   "author": "",
   "license": "MIT",
