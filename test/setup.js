@@ -1,14 +1,12 @@
-before(async () => {
-  const {
-    config
-  } = require("../test-helpers/config");
-  const {
-    SimpleDao
-  } = require("btrz-simple-dao");
+const { config } = require("../test-helpers/config");
+const { SimpleDao } = require("btrz-simple-dao");
+
+async function resetDatabase() {
   const dao = new SimpleDao(config);
   const db = await dao.connect();
+  await db.dropDatabase();
+}
 
-  return db.dropDatabase().then((db) => {
-    console.log(`Database '${config.db.options.database}' dropped OK!`);
-  });
-});
+module.exports = {
+  resetDatabase
+};

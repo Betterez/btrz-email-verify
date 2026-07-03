@@ -1,9 +1,121 @@
 const API_KEY = process.env.QUICK_EMAIL_VERIFICATION_KEY;
-const quickemailverification = require("quickemailverification");
+const BASE_URL = "https://api.quickemailverification.com";
+const API_VERSION = "v1";
+const USER_AGENT = "quickemailverification-node/v1.0.4 (https://github.com/quickemailverification/quickemailverification-node)";
+const NON_ERROR_4XX_STATUS_CODES = [400, 401, 402, 403, 404, 429];
+
+class QuickEmailVerification {
+  constructor(apiKey) {
+    this.apiKey = apiKey;
+  }
+
+  verify(email, options, callback) {
+    if (typeof options === "function") {
+      callback = options;
+      options = {};
+    }
+
+    return this._request("/verify", email, options, callback);
+  }
+
+  sandbox(email, options, callback) {
+    if (typeof options === "function") {
+      callback = options;
+      options = {};
+    }
+
+    return this._request("/verify/sandbox", email, options, callback);
+  }
+
+  _buildUrl(path, email, options = {}) {
+    const url = new URL(`${BASE_URL}/${API_VERSION}${path}`);
+    url.searchParams.set("email", email);
+    const query = options.query || {};
+    Object.entries(query).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        url.searchParams.set(key, String(value));
+      }
+    });
+    return url.toString();
+  }
+
+  _buildHeaders(options = {}) {
+    const headers = {
+      "user-agent": USER_AGENT
+    };
+
+    if (this.apiKey) {
+      headers.Authorization = `token ${this.apiKey}`;
+    }
+
+    if (options.headers) {
+      Object.assign(headers, options.headers);
+    }
+
+    return headers;
+  }
+
+  async _execute(path, email, options = {}) {
+    const response = await fetch(this._buildUrl(path, email, options), {
+      method: "GET",
+      headers: this._buildHeaders(options)
+    });
+
+    const contentType = response.headers.get("content-type") || "";
+    const textBody = await response.text();
+    let body = textBody;
+
+    if (contentType.includes("json")) {
+      body = JSON.parse(textBody || "{}");
+    }
+
+    const statusCode = response.status;
+    if (Math.floor(statusCode / 100) === 5) {
+      const error = new Error(`Error ${statusCode}`);
+      error.code = statusCode;
+      throw error;
+    }
+
+    if (Math.floor(statusCode / 100) === 4 && !NON_ERROR_4XX_STATUS_CODES.includes(statusCode)) {
+      let message = "";
+      if (typeof body === "string") {
+        message = body;
+      } else if (body && body.error) {
+        message = body.error;
+      } else {
+        message = "Unable to select error message from json returned by request responsible for error";
+      }
+      const error = new Error(message);
+      error.code = statusCode;
+      throw error;
+    }
+
+    const headers = {};
+    for (const [key, value] of response.headers.entries()) {
+      headers[key] = value;
+    }
+
+    return {
+      body,
+      code: statusCode,
+      headers
+    };
+  }
+
+  _request(path, email, options, callback) {
+    const executePromise = this._execute(path, email, options || {});
+    if (typeof callback === "function") {
+      executePromise
+        .then((result) => callback(null, result))
+        .catch((error) => callback(error));
+    }
+    return executePromise;
+  }
+}
+
+
 function getQuickEmailVerification() {
-  const verifier = quickemailverification
-    .client(API_KEY)
-    .quickemailverification();
+  const verifier = new QuickEmailVerification(API_KEY);
   return (email) => {
     function executor(resolve, reject) {
       try {
@@ -23,9 +135,7 @@ function getQuickEmailVerification() {
 }
 
 function getQuickEmailVerificationSandbox() {
-  const verifier = quickemailverification
-    .client(API_KEY)
-    .quickemailverification();
+  const verifier = new QuickEmailVerification(API_KEY);
   return (email) => {
     function executor(resolve, reject) {
       try {
@@ -458,6 +568,7 @@ function getQuickEmailVerificationMock() {
 }
 
 module.exports = {
+  QuickEmailVerification,
   getQuickEmailVerification,
   getQuickEmailVerificationMock,
   getQuickEmailVerificationSandbox

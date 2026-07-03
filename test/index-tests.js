@@ -1,24 +1,18 @@
+const assert = require("node:assert/strict");
+const { describe, it, before, beforeEach, afterEach } = require("node:test");
+const { config } = require("../test-helpers/config");
+const { verify, getQuickEmailVerificationMock } = require("../index");
+const { SimpleDao } = require("btrz-simple-dao");
+const { VerifiedEmail } = require("../models");
+const { resetDatabase } = require("./setup");
+
 describe("Verify email", () => {
-  const { config } = require("../test-helpers/config");
-  const { expect } = require("chai");
-  const {
-    verify,
-    getQuickEmailVerificationMock
-  } = require("../index");
-  const {
-    SimpleDao
-  } = require("btrz-simple-dao");
-  const {
-    VerifiedEmail
-  } = require("../models");
   const dao = new SimpleDao(config);
   const verifier = getQuickEmailVerificationMock();
 
   const {
     BzDate
   } = require("bz-date");
-
-  const sandbox = require("sinon").createSandbox();
 
   const blacklistedEmail = new VerifiedEmail({
     email: "blacklisted@example.com",
@@ -51,6 +45,10 @@ describe("Verify email", () => {
   let _expiratedWhitelistedEmail = null;
   let _expiratedWhitelistedNotSafe = null;
 
+  before(async () => {
+    await resetDatabase();
+  });
+
   beforeEach(async () => {
     _blacklistedEmail = await dao.save(blacklistedEmail);
     _whitelistedEmail = await dao.save(whitelisted);
@@ -59,7 +57,6 @@ describe("Verify email", () => {
   });
 
   afterEach(async () => {
-    sandbox.restore();
     await dao.for(VerifiedEmail).removeById(_blacklistedEmail._id);
     await dao.for(VerifiedEmail).removeById(_whitelistedEmail._id);
     await dao.for(VerifiedEmail).remove({ email: "rejected-email@example.com" })
@@ -70,64 +67,68 @@ describe("Verify email", () => {
 
   it("returns true if running out of credits", async () => {
     const result = await verify(dao, verifier, "low-credit@example.com");
-    expect(result.send).to.be.eql(true);
+    assert.equal(result.send, true);
   });
 
   it("returns true if the reason for rejection is excluded (unavailable-smtp)", async () => {
     const result = await verify(dao, verifier, "unavailable-smtp@example.com");
-    expect(result.send).to.be.eql(true);
+    assert.equal(result.send, true);
   });
 
   it("returns true if the reason for rejection is excluded (unexpected-error)", async () => {
     const result = await verify(dao, verifier, "unexpected-error@example.com");
-    expect(result.send).to.be.eql(true);
+    assert.equal(result.send, true);
   });
 
   it("returns true if the reason for rejection is excluded (timeout)", async () => {
     const result = await verify(dao, verifier, "timeout@example.com");
-    expect(result.send).to.be.eql(true);
+    assert.equal(result.send, true);
   });
 
   it("returns true if email is safe_to_send", async () => {
     const result = await verify(dao, verifier, "safe-to-send@example.com");
-    expect(result.send).to.be.eql(true);
-    expect(result.result).to.be.eql("valid");
+    assert.equal(result.send, true);
+    assert.equal(result.result, "valid");
   });
 
   it("returns false is email is invalid and set to db as blacklisted", async () => {
     const result = await verify(dao, verifier, "invalid-email@example.com");
-    expect(result.send).to.be.eql(false);
+    assert.equal(result.send, false);
     const saved = await dao.for(VerifiedEmail).findOne({email: "invalid-email@example.com"});
-    expect(saved.blacklisted).to.be.eql(true);
+    assert.equal(saved.blacklisted, true);
   });
 
   it("returns true is email is valid and should be whitelistes", async () => {
     const result = await verify(dao, verifier, "role@example.com");
-    expect(result.send).to.be.eql(true);
+    assert.equal(result.send, true);
     const saved = await dao.for(VerifiedEmail).findOne({email: "role@example.com"});
-    expect(saved.whitelisted).to.be.eql(true);
+    assert.equal(saved.whitelisted, true);
   });
 
   it("returns false if email is in db as blocked", async () => {
     const result = await verify(dao, verifier, "blacklisted@example.com");
-    expect(result.send).to.be.eql(false);
+    assert.equal(result.send, false);
   });
 
   it("return true if email is in db and marked as good", async () => {
     const result = await verify(dao, verifier, "whitelisted@example.com");
-    expect(result.send).to.be.eql(true);
+    assert.equal(result.send, true);
   });
 
   it("should save into the db a failure as blacklisted", async () => {
     const result = await verify(dao, verifier, "rejected-email@example.com");
-    expect(result.send).to.be.eql(false);
+    assert.equal(result.send, false);
     const saved = await dao.for(VerifiedEmail).findOne({email: "rejected-email@example.com"});
-    expect(saved.blacklisted).to.be.eql(true);
+    assert.equal(saved.blacklisted, true);
   });
 
   it("you should recheck the email whitelist if the last update was 30 days ago " +
             "and then it should be saved in the db in the whitelist", async () => {
-    const verifierSpy = sandbox.spy(verifier);
+    let verifierCalls = 0;
+    const verifierSpy = async (email) => {
+      verifierCalls += 1;
+      return verifier(email);
+    };
     const updatedAt = (new BzDate("2020-01-01 00:00:00:000")).toLiteral();
     const set = {
       $set: {
@@ -141,16 +142,20 @@ describe("Verify email", () => {
       }, set);
     const result = await verify(dao, verifierSpy, "expirated-whitelisted@example.com");
     
-    expect(result.send).to.be.eql(true);
-    expect(verifierSpy.calledOnce).to.be.eql(true);
+    assert.equal(result.send, true);
+    assert.equal(verifierCalls, 1);
     const saved = await dao.for(VerifiedEmail).find({email: "expirated-whitelisted@example.com"}).toArray();
-    expect(saved.length).to.be.eql(1);
-    expect(saved[0].whitelisted).to.be.eql(true);
-    expect(saved[0]._id).to.be.eql(_expiratedWhitelistedEmail._id);
-    expect(saved[0].updatedAt.value).to.be.greaterThan(updatedAt.value);
+    assert.equal(saved.length, 1);
+    assert.equal(saved[0].whitelisted, true);
+    assert.deepEqual(saved[0]._id, _expiratedWhitelistedEmail._id);
+    assert.ok(saved[0].updatedAt.value > updatedAt.value);
   });
   it("should recheck the email whitelist if the last update was 30 days ago, but then mark as blacklisted", async () => {
-    const verifierSpy = sandbox.spy(verifier);
+    let verifierCalls = 0;
+    const verifierSpy = async (email) => {
+      verifierCalls += 1;
+      return verifier(email);
+    };
     const updatedAt = (new BzDate("2023-01-01 00:00:00:000")).toLiteral();
     const set = {
       $set: {
@@ -164,13 +169,13 @@ describe("Verify email", () => {
       }, set);
     const result = await verify(dao, verifierSpy, "expirated-whitelisted-not-safe@example.com");
     
-    expect(result.send).to.be.eql(false);
-    expect(verifierSpy.calledOnce).to.be.eql(true);
+    assert.equal(result.send, false);
+    assert.equal(verifierCalls, 1);
     const saved = await dao.for(VerifiedEmail).find({email: "expirated-whitelisted-not-safe@example.com"}).toArray();
-    expect(saved.length).to.be.eql(1);
-    expect(saved[0].blacklisted).to.be.eql(true);
+    assert.equal(saved.length, 1);
+    assert.equal(saved[0].blacklisted, true);
     // record updated
-    expect(saved[0]._id).to.be.eql(_expiratedWhitelistedNotSafe._id);
-    expect(saved[0].updatedAt.value).to.be.greaterThan(updatedAt.value);
+    assert.deepEqual(saved[0]._id, _expiratedWhitelistedNotSafe._id);
+    assert.ok(saved[0].updatedAt.value > updatedAt.value);
   });
 });
