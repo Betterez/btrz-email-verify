@@ -11,6 +11,13 @@ const {
 // Exclude certain reasons from blacklisting an email
 const excludedReasons = ["unexpected_error", "unavailable_smtp", "timeout"];
 
+function isValidQevResponse(body) {
+  return body
+    && typeof body === "object"
+    && !Array.isArray(body)
+    && typeof body.result === "string";
+}
+
 function isOutdated(verifiedEmail) {
   if (!verifiedEmail || !verifiedEmail.updatedAt) {
     return true;
@@ -49,6 +56,9 @@ async function verify(dao, verifier, email, logger) {
   }
   if (response.body.success === "false") {
     return buildResponse(response.body.message, response.body, true, logger);
+  }
+  if (!isValidQevResponse(response.body)) {
+    return buildResponse(status.FAILURE, response.body, true, logger);
   }
   if (excludedReasons.includes(response.body.reason)) {
     return buildResponse(response.body.reason, response.body, true, logger);

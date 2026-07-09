@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const { describe, it, before, beforeEach, afterEach } = require("node:test");
 const { config } = require("../test-helpers/config");
 const { verify, getQuickEmailVerificationMock } = require("../index");
+const { status } = require("../db-wrapper");
 const { SimpleDao } = require("btrz-simple-dao");
 const { VerifiedEmail } = require("../models");
 const { resetDatabase } = require("./setup");
@@ -68,6 +69,74 @@ describe("Verify email", () => {
   it("returns true if running out of credits", async () => {
     const result = await verify(dao, verifier, "low-credit@example.com");
     assert.equal(result.send, true);
+  });
+
+  it("returns true and does not blacklist when QEV responds with 429 HTML", async () => {
+    const email = "rate-limited-html@example.com";
+    const html429 = "<html><head><title>429 Too Many Requests</title></head><body>429</body></html>";
+    const rateLimitedVerifier = async () => ({
+      code: 429,
+      body: html429
+    });
+
+    const result = await verify(dao, rateLimitedVerifier, email);
+
+    assert.equal(result.send, true);
+    assert.equal(result.result, status.FAILURE);
+    assert.equal(result.response, html429);
+    const saved = await dao.for(VerifiedEmail).findOne({ email });
+    assert.equal(saved, null);
+  });
+
+  it("returns true and does not blacklist when QEV responds with 429 JSON content-type but non-JSON body", async () => {
+    const email = "rate-limited-json-ctype@example.com";
+    const html429 = "<html><head><title>429 Too Many Requests</title></head><body>429</body></html>";
+    const rateLimitedVerifier = async () => ({
+      code: 429,
+      body: html429,
+      headers: { "content-type": "application/json" }
+    });
+
+    const result = await verify(dao, rateLimitedVerifier, email);
+
+    assert.equal(result.send, true);
+    assert.equal(result.result, status.FAILURE);
+    assert.equal(result.response, html429);
+    const saved = await dao.for(VerifiedEmail).findOne({ email });
+    assert.equal(saved, null);
+  });
+
+  it("returns true and does not blacklist when QEV responds with 404 plain text", async () => {
+    const email = "not-found@example.com";
+    const notFoundBody = "404 page not found\n";
+    const notFoundVerifier = async () => ({
+      code: 404,
+      body: notFoundBody
+    });
+
+    const result = await verify(dao, notFoundVerifier, email);
+
+    assert.equal(result.send, true);
+    assert.equal(result.result, status.FAILURE);
+    assert.equal(result.response, notFoundBody);
+    const saved = await dao.for(VerifiedEmail).findOne({ email });
+    assert.equal(saved, null);
+  });
+
+  it("returns true and does not blacklist when QEV response is not a verification result object", async () => {
+    const email = "malformed@example.com";
+    const malformedVerifier = async () => ({
+      code: 200,
+      body: {}
+    });
+
+    const result = await verify(dao, malformedVerifier, email);
+
+    assert.equal(result.send, true);
+    assert.equal(result.result, status.FAILURE);
+    assert.deepEqual(result.response, {});
+    const saved = await dao.for(VerifiedEmail).findOne({ email });
+    assert.equal(saved, null);
   });
 
   it("returns true if the reason for rejection is excluded (unavailable-smtp)", async () => {

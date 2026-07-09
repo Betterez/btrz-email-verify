@@ -63,13 +63,26 @@ class QuickEmailVerification {
 
     const contentType = response.headers.get("content-type") || "";
     const textBody = await response.text();
+    const statusCode = response.status;
+
+    if (statusCode === 429) {
+      const headers = {};
+      for (const [key, value] of response.headers.entries()) {
+        headers[key] = value;
+      }
+      return {
+        body: textBody,
+        code: statusCode,
+        headers
+      };
+    }
+
     let body = textBody;
 
     if (contentType.includes("json")) {
       body = JSON.parse(textBody || "{}");
     }
 
-    const statusCode = response.status;
     if (Math.floor(statusCode / 100) === 5) {
       const error = new Error(`Error ${statusCode}`);
       error.code = statusCode;

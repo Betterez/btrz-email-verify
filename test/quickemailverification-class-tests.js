@@ -85,6 +85,40 @@ describe("QuickEmailVerification class", () => {
     assert.equal(scope.isDone(), true);
   });
 
+  const HTML_429_BODY = "<html>\r\n<head><title>429 Too Many Requests</title></head>\r\n<body>\r\n<center><h1>429 Too Many Requests</h1></center>\r\n<hr><center>nginx</center>\r\n</body>\r\n</html>\r\n";
+
+  it("returns 429 response body without parsing when content-type is text/html", async () => {
+    const email = "rate-limited-html@example.com";
+    const client = new QuickEmailVerification("rate-limit-token");
+
+    const scope = nock(BASE_URL)
+      .get("/v1/verify")
+      .query({ email })
+      .reply(429, HTML_429_BODY, { "Content-Type": "text/html" });
+
+    const response = await invokeWithTimeout(client.verify.bind(client), email);
+
+    assert.equal(response.code, 429);
+    assert.equal(response.body, HTML_429_BODY);
+    assert.equal(scope.isDone(), true);
+  });
+
+  it("returns 429 response body without JSON parsing when content-type is application/json", async () => {
+    const email = "rate-limited-json-ctype@example.com";
+    const client = new QuickEmailVerification("rate-limit-token");
+
+    const scope = nock(BASE_URL)
+      .get("/v1/verify")
+      .query({ email })
+      .reply(429, HTML_429_BODY, { "Content-Type": "application/json" });
+
+    const response = await invokeWithTimeout(client.verify.bind(client), email);
+
+    assert.equal(response.code, 429);
+    assert.equal(response.body, HTML_429_BODY);
+    assert.equal(scope.isDone(), true);
+  });
+
   it("sandbox supports omitted options with callback signature", async () => {
     const captured = {};
     const email = "alias+sandbox-new-class@example.com";
