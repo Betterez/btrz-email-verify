@@ -40,7 +40,7 @@ async function checkIfBlocked(dao, email) {
   }
 }
 
-async function createOrUpdate(dao, email, currentStatus, response = {}) {
+async function createOrUpdate(dao, email, currentStatus, response = {}, context) {
   validateStatus(currentStatus);
   const date = (new BzDate()).toLiteral();
   const data = buildData({
@@ -49,7 +49,7 @@ async function createOrUpdate(dao, email, currentStatus, response = {}) {
     updatedAt: date
   }, currentStatus, response);
   const verifiedEmail = new VerifiedEmail(data);
-  await dao.for(VerifiedEmail).update({email}, verifiedEmail, {upsert: true});
+  await dao.for(VerifiedEmail).update({email}, verifiedEmail, {upsert: true}, context);
   return await getByEmail(dao, email);
 }
 
@@ -70,7 +70,7 @@ async function getByEmail(dao, email) {
   });
 }
 
-async function update(dao, email, currentStatus, response) {
+async function update(dao, email, currentStatus, response, context) {
   validateStatus(currentStatus);
   await checkIfBlocked(dao, email);
   const date = (new BzDate()).toLiteral();
@@ -81,15 +81,15 @@ async function update(dao, email, currentStatus, response) {
     email
   }, {
     $set: set
-  });
+  }, undefined, context);
   return await getByEmail(dao, email);
 }
 
-async function remove(dao, email) {
+async function remove(dao, email, context) {
   await checkIfBlocked(dao, email);
   return await dao.for(VerifiedEmail).remove({
     email
-  });
+  }, context);
 }
 
 module.exports = {

@@ -14,6 +14,31 @@ const {
   status
 } = require("../db-wrapper");
 
+function spyDaoWrites(dao) {
+  const originalFor = dao.for.bind(dao);
+  const calls = {update: [], remove: []};
+  dao.for = (Model) => {
+    const operator = originalFor(Model);
+    const originalUpdate = operator.update.bind(operator);
+    const originalRemove = operator.remove.bind(operator);
+    operator.update = async (...args) => {
+      calls.update.push(args);
+      return originalUpdate(...args);
+    };
+    operator.remove = async (...args) => {
+      calls.remove.push(args);
+      return originalRemove(...args);
+    };
+    return operator;
+  };
+  return {
+    calls,
+    restore() {
+      dao.for = originalFor;
+    }
+  };
+}
+
 describe("db-wrapper", () => {
   const chance = new Chance();
   const dao = new SimpleDao(config);
@@ -117,6 +142,21 @@ describe("db-wrapper", () => {
         }
       );
     });
+
+    it("passes audit context as the last argument to dao update", async () => {
+      const context = {accountId: "acc-1", userId: "user-1"};
+      const spy = spyDaoWrites(dao);
+      try {
+        await createOrUpdate(dao, email, status.WHITELISTED, response, context);
+        assert.equal(spy.calls.update.length, 1);
+        const args = spy.calls.update[0];
+        assert.equal(args.length, 4);
+        assert.deepEqual(args[2], {upsert: true});
+        assert.deepEqual(args[3], context);
+      } finally {
+        spy.restore();
+      }
+    });
   });
 
   describe("update", () => {
@@ -178,6 +218,21 @@ describe("db-wrapper", () => {
         }
       );
     });
+
+    it("passes audit context as the last argument to dao update without options", async () => {
+      const context = {accountId: "acc-2", userId: "user-2"};
+      const spy = spyDaoWrites(dao);
+      try {
+        await update(dao, email, status.BLACKLISTED, undefined, context);
+        assert.equal(spy.calls.update.length, 1);
+        const args = spy.calls.update[0];
+        assert.equal(args.length, 4);
+        assert.equal(args[2], undefined);
+        assert.deepEqual(args[3], context);
+      } finally {
+        spy.restore();
+      }
+    });
   });
 
   describe("remove", () => {
@@ -197,6 +252,21 @@ describe("db-wrapper", () => {
           return true;
         }
       );
+    });
+
+    it("passes audit context as the last argument to dao remove", async () => {
+      await createOrUpdate(dao, email, status.WHITELISTED, response);
+      const context = {accountId: "acc-3", userId: "user-3"};
+      const spy = spyDaoWrites(dao);
+      try {
+        await remove(dao, email, context);
+        assert.equal(spy.calls.remove.length, 1);
+        const args = spy.calls.remove[0];
+        assert.equal(args.length, 2);
+        assert.deepEqual(args[1], context);
+      } finally {
+        spy.restore();
+      }
     });
   });
 });

@@ -191,6 +191,30 @@ describe("Verify email", () => {
     assert.equal(saved.blacklisted, true);
   });
 
+  it("passes audit context as the last argument when saving verification", async () => {
+    const context = {accountId: "acc-4", userId: "user-4"};
+    const originalFor = dao.for.bind(dao);
+    const updateCalls = [];
+    dao.for = (Model) => {
+      const operator = originalFor(Model);
+      const originalUpdate = operator.update.bind(operator);
+      operator.update = async (...args) => {
+        updateCalls.push(args);
+        return originalUpdate(...args);
+      };
+      return operator;
+    };
+    try {
+      await verify(dao, verifier, "invalid-email@example.com", undefined, context);
+      assert.ok(updateCalls.length >= 1);
+      const args = updateCalls[updateCalls.length - 1];
+      assert.equal(args.length, 4);
+      assert.deepEqual(args[3], context);
+    } finally {
+      dao.for = originalFor;
+    }
+  });
+
   it("you should recheck the email whitelist if the last update was 30 days ago " +
             "and then it should be saved in the db in the whitelist", async () => {
     let verifierCalls = 0;

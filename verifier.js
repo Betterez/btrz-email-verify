@@ -40,7 +40,7 @@ function buildResponse(result, response, send, logger) {
   };
 }
 
-async function verify(dao, verifier, email, logger) {
+async function verify(dao, verifier, email, logger, context) {
   const verifiedEmail = await getByEmail(dao, email);
   if (verifiedEmail && verifiedEmail.blacklisted) {
     return buildResponse(status.BLACKLISTED, verifiedEmail.QEVResponse, false, logger);
@@ -65,9 +65,9 @@ async function verify(dao, verifier, email, logger) {
   }
   const saveToSend = response.body.result === "valid";
   if (!saveToSend) {
-    await createOrUpdate(dao, email, status.BLACKLISTED, response.body);
+    await createOrUpdate(dao, email, status.BLACKLISTED, response.body, context);
   } else {
-    await createOrUpdate(dao, email, status.WHITELISTED, response.body);
+    await createOrUpdate(dao, email, status.WHITELISTED, response.body, context);
   }
   return buildResponse(response.body.result, response.body, saveToSend, logger);
 }
